@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><?= mode === "profile" ? pegawai.Nama_Lengkap : "Direktori Pegawai Madania" ?></title>
+<title>Direktori Pegawai Madania</title>
 
-<script src="https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.2/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
@@ -15,6 +15,7 @@
   padding:0;
   box-sizing:border-box;
   font-family:'Poppins',sans-serif;
+  transition:0.3s ease;
 }
 
 body{
@@ -36,15 +37,18 @@ body.light{
   max-width:520px;
   border-radius:24px;
   overflow:hidden;
-  background:rgba(15, 23, 42, 0.95);
-  border:1px solid rgba(255,255,255,0.1);
-  box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  backdrop-filter:blur(20px);
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.15);
+  box-shadow:0 30px 70px rgba(0,0,0,0.6);
   text-align:center;
+  animation:fadeIn 1s ease;
 }
 
 body.light .card{
   background:white;
   border:1px solid #ccc;
+  box-shadow:0 20px 40px rgba(0,0,0,0.15);
 }
 
 @keyframes fadeIn{
@@ -70,7 +74,6 @@ body.light .card{
   height:110px;
   border-radius:50%;
   object-fit:cover;
-  object-position:top;
   border:4px solid white;
   margin:15px auto;
   display:block;
@@ -112,7 +115,6 @@ button{
   border:none;
   font-weight:600;
   cursor:pointer;
-  transition: background 0.3s ease, transform 0.1s ease;
 }
 
 .btn-save{
@@ -140,8 +142,8 @@ body.light .btn-save{
   color:white;
 }
 
-button:active {
-  transform: scale(0.98);
+.loading {
+  padding: 50px;
 }
 
 /* QR */
@@ -170,7 +172,6 @@ button:active {
   font-size: 16px;
   text-align: center;
   margin-bottom: 15px;
-  transition: border 0.3s ease;
 }
 
 body.light .id-input {
@@ -183,120 +184,119 @@ body.light .id-input {
 
 <body>
 
-<div class="card">
-
-  <? if (mode === "list") { ?>
-    <!-- TAMPILAN INPUT ID -->
-    <div class="header">
-        <img src="https://i.ibb.co.com/fYhbdXW0/Madania-Landscape-Putih.png" id="main-logo" class="logo-top">
-        <h2 style="margin-bottom:15px;">Cari Profil Pegawai</h2>
-    </div>
-
-    <? if (typeof error !== 'undefined' && error) { ?>
-      <div style="background:rgba(255,0,0,0.2); padding:10px; margin:0 30px; border-radius:8px; font-size:13px;"><?= error ?></div>
-    <? } ?>
-
-    <form action="<?= appBaseUrl ?>" method="get" target="_self" class="search-container">
-       <input type="number" name="id" class="id-input" placeholder="Masukkan ID Pegawai (Contoh: 101)" required>
-       <button type="submit" class="btn-save" style="background:#1e3a8a; color:white;">Lihat Profil</button>
-       <button type="button" class="btn-toggle" onclick="toggleMode()">Ganti Tema</button>
-    </form>
-
-  <? } else { ?>
-    <!-- TAMPILAN KARTU NAMA (PROFILE) -->
-    <div class="header">
-        <img src="https://i.ibb.co.com/fYhbdXW0/Madania-Landscape-Putih.png" id="main-logo" class="logo-top">
-        <img src="<?= pegawai.URL_Foto ?>" class="profile-photo">
-    </div>
-
-    <div class="content">
-        <h1><?= pegawai.Nama_Lengkap ?></h1>
-        <div class="title">
-          <?= pegawai.Jabatan ?><br>
-          <?= pegawai.Unit_Kerja ?>
-        </div>
-
-        <div class="info"><strong>Madania School</strong></div>
-        <div class="info">📱 <?= pegawai.No_HP ?></div>
-        <div class="info">☎ <?= pegawai.Telp_Kantor ?></div>
-        <div class="info">✉ <?= pegawai.Email ?></div>
-        <div class="info">🌐 <?= pegawai.Website ?></div>
-
-        <button class="btn-save" onclick="downloadVCF()">Simpan Kontak</button>
-        <button class="btn-wa" onclick="openWA()">Chat WhatsApp</button>
-        <button class="btn-share" onclick="shareCard()">Share Kartu</button>
-        <button class="btn-toggle" onclick="toggleMode()">Ganti Tema</button>
-
-        <div class="qr-wrapper">
-            <div id="qrcode"></div>
-        </div>
-    </div>
-  <? } ?>
-
+<div class="card" id="app">
+    <div class="loading">Memuat Data...</div>
 </div>
 
 <script>
-<? if (mode === "profile") { ?>
-const pegawai = <?!= JSON.stringify(pegawai) ?>;
-const appUrl = "<?!= appUrl ?>";
+// GANTI URL DI BAWAH INI dengan URL Web App Google Script Anda (hasil deploy)
+const API_URL = "https://script.google.com/macros/s/AKfycbwDg9oD5CfEm4K3E4YkajDPyww9Q0cxw1AX12k-JIsWtMS2-Awkv-Soj5eYAbIpaWu1/exec";
 
-const vcardData = `BEGIN:VCARD
-VERSION:3.0
-FN:${pegawai.Nama_Lengkap}
-ORG:${pegawai.Unit_Kerja}
-TITLE:${pegawai.Jabatan}
-TEL;TYPE=CELL:${pegawai.No_HP}
-TEL;TYPE=WORK:${pegawai.Telp_Kantor}
-EMAIL:${pegawai.Email}
-URL:https://${pegawai.Website}
-END:VCARD`;
+let currentPegawai = null;
+
+async function init() {
+    const appDiv = document.getElementById('app');
+    try {
+        const response = await fetch(API_URL);
+        const allData = await response.json();
+        
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+
+        if (id) {
+            currentPegawai = allData.find(p => p.ID.toString() === id.toString());
+            if (currentPegawai) {
+                renderProfile(currentPegawai);
+                return;
+            }
+        }
+        renderSearch();
+    } catch (err) {
+        appDiv.innerHTML = `<div class="loading">Gagal memuat data. Periksa URL API.</div>`;
+    }
+}
+
+function renderSearch() {
+    document.getElementById('app').innerHTML = `
+        <div class="header">
+            <img src="https://i.ibb.co.com/fYhbdXW0/Madania-Landscape-Putih.png" id="main-logo" class="logo-top">
+            <h2 style="margin-bottom:15px;">Cari Profil Pegawai</h2>
+        </div>
+        <form onsubmit="event.preventDefault(); window.location.search='?id='+document.getElementById('idIn').value;" class="search-container">
+           <input type="number" id="idIn" class="id-input" placeholder="Masukkan ID Pegawai" required>
+           <button type="submit" class="btn-save" style="background:#1e3a8a; color:white;">Lihat Profil</button>
+           <button type="button" class="btn-toggle" onclick="toggleMode()">Ganti Tema</button>
+        </form>
+    `;
+}
+
+function renderProfile(p) {
+    document.title = "Profil - " + p.Nama_Lengkap;
+    document.getElementById('app').innerHTML = `
+        <div class="header">
+            <img src="https://i.ibb.co.com/fYhbdXW0/Madania-Landscape-Putih.png" id="main-logo" class="logo-top">
+            <img src="${p.URL_Foto}" class="profile-photo">
+        </div>
+        <div class="content">
+            <h1>${p.Nama_Lengkap}</h1>
+            <div class="title">${p.Jabatan}<br>${p.Unit_Kerja}</div>
+            <div class="info"><strong>Madania School</strong></div>
+            <div class="info">📱 ${p.No_HP}</div>
+            <div class="info">☎ ${p.Telp_Kantor}</div>
+            <div class="info">✉ ${p.Email}</div>
+            <div class="info">🌐 ${p.Website}</div>
+            <button class="btn-save" onclick="downloadVCF()">Simpan Kontak</button>
+            <button class="btn-wa" onclick="openWA()">Chat WhatsApp</button>
+            <button class="btn-share" onclick="shareCard()">Share Kartu</button>
+            <button class="btn-toggle" onclick="toggleMode()">Ganti Tema</button>
+            <a href="${window.location.pathname}" style="display:block; margin-top:15px; color:inherit; font-size:12px;">Kembali ke Direktori</a>
+            <div class="qr-wrapper"><div id="qrcode"></div></div>
+        </div>
+    `;
+
+    new QRCode(document.getElementById("qrcode"), {
+        text: window.location.href,
+        width: 200,
+        height: 200
+    });
+}
 
 function downloadVCF() {
-  const blob = new Blob([vcardData], { type: "text/vcard" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `${pegawai.Nama_Lengkap}.vcf`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const p = currentPegawai;
+  const vcard = `BEGIN:VCARD
+VERSION:3.0
+FN:${p.Nama_Lengkap}
+ORG:${p.Unit_Kerja}
+TITLE:${p.Jabatan}
+TEL;TYPE=CELL:${p.No_HP}
+TEL;TYPE=WORK:${p.Telp_Kantor}
+EMAIL:${p.Email}
+URL:${p.Website.startsWith('http') ? p.Website : 'https://' + p.Website}
+END:VCARD`;
+
+  const blob = new Blob([vcard], { type: "text/vcard" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${p.Nama_Lengkap}.vcf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 function openWA() {
-  let phone = String(pegawai.No_HP).replace(/\D/g, '');
+  let phone = String(currentPegawai.No_HP).replace(/\D/g, '');
   if (phone.startsWith('0')) phone = '62' + phone.slice(1);
   window.open("https://wa.me/" + phone, "_blank");
 }
 
 function shareCard() {
-  const shareText = `Profil ${pegawai.Nama_Lengkap}\n${pegawai.Jabatan}\n\nCek kartu nama digital di sini:`;
-  const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText + "\n" + appUrl)}`;
-
-  if (navigator.share && !window.frameElement) {
-    navigator.share({
-      title: "Profil " + pegawai.Nama_Lengkap,
-      text: shareText,
-      url: appUrl
-    }).catch(() => window.open(waUrl, "_blank"));
+  const shareText = `Profil ${currentPegawai.Nama_Lengkap}\n${currentPegawai.Jabatan}\n\nCek kartu nama digital di sini:`;
+  if (navigator.share) {
+    navigator.share({ title: currentPegawai.Nama_Lengkap, text: shareText, url: window.location.href });
   } else {
-    // Langsung ke WhatsApp jika di dalam iframe (Google Sites)
-    window.open(waUrl, "_blank");
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText + "\n" + window.location.href)}`, "_blank");
   }
 }
-
-window.onload = function() {
-  const qrElem = document.getElementById("qrcode");
-  if (qrElem) {
-    qrElem.innerHTML = "";
-    new QRCode(qrElem, {
-      text: appUrl,
-      width: 200,
-      height: 200,
-      colorDark : "#000000",
-      colorLight : "#ffffff"
-    });
-  }
-};
-<? } ?>
 
 function toggleMode() {
   const isLight = document.body.classList.toggle("light");
@@ -305,7 +305,8 @@ function toggleMode() {
     ? "https://i.ibb.co.com/B5kJ1P5c/Madania-Landscape-Biru.png" 
     : "https://i.ibb.co.com/fYhbdXW0/Madania-Landscape-Putih.png";
 }
-</script>
 
+init();
+</script>
 </body>
 </html>
