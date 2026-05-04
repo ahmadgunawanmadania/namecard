@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direktori Pegawai Madania</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Poppins',sans-serif;
+  transition:0.3s ease;
+}
+
+body{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#0b132b,#1e3a8a);
+  color:white;
+}
+
+body.light{
+  background:linear-gradient(135deg,#eaeef5,#d8e1f0);
+  color:#0b132b;
+}
+
+.card{
+  width:95%;
+  max-width:520px;
+  border-radius:24px;
+  overflow:hidden;
+  backdrop-filter:blur(20px);
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.15);
+  box-shadow:0 30px 70px rgba(0,0,0,0.6);
+  text-align:center;
+  animation:fadeIn 1s ease;
+}
+
+body.light .card{
+  background:white;
+  border:1px solid #ccc;
+  box-shadow:0 20px 40px rgba(0,0,0,0.15);
+}
+
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(20px);}
+  to{opacity:1; transform:translateY(0);}
+}
+
+/* HEADER */
+.header{
+  padding:30px 25px 10px 25px;
+}
+
+.logo-top{
+  width:100%;
+  max-width:260px;
+  height:auto;
+  margin:0 auto 15px auto;
+  display:block;
+}
+
+.profile-photo{
+  width:110px;
+  height:110px;
+  border-radius:50%;
+  object-fit:cover;
+  border:4px solid white;
+  margin:15px auto;
+  display:block;
+  box-shadow:0 10px 25px rgba(0,0,0,0.4);
+}
+
+body.light .profile-photo{
+  border:4px solid #0b132b;
+}
+
+/* CONTENT */
+.content{
+  padding:20px 30px 35px 30px;
+}
+
+h1{
+  font-size:22px;
+  font-weight:700;
+  margin-bottom:8px;
+}
+
+.title{
+  font-size:14px;
+  line-height:1.6;
+  margin-bottom:18px;
+}
+
+.info{
+  font-size:14px;
+  margin:6px 0;
+}
+
+/* Buttons */
+button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:12px;
+  border:none;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.btn-save{
+  background:white;
+  color:#0b132b;
+}
+
+body.light .btn-save{
+  background:#0b132b;
+  color:white;
+}
+
+.btn-wa{
+  background:#25D366;
+  color:white;
+}
+
+.btn-share{
+  background:#444;
+  color:white;
+}
+
+.btn-toggle{
+  background:#888;
+  color:white;
+}
+
+.loading {
+  padding: 50px;
+}
+
+/* QR */
+.qr-wrapper{
+  margin-top:30px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:30px;
+  border-radius:20px;
+  background:white;
+}
+
+/* CSS KHUSUS INPUT ID */
+.search-container {
+  padding: 30px;
+}
+
+.id-input {
+  width: 100%;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.1);
+  color: white;
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+body.light .id-input {
+  background: #f8f9fa;
+  color: #0b132b;
+  border: 1px solid #ccc;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card" id="app">
+    <div class="loading">Memuat Data...</div>
+</div>
+
+<script>
+// GANTI URL DI BAWAH INI dengan URL Web App Google Script Anda (hasil deploy)
+const API_URL = "TEMPEL_URL_WEB_APP_ANDA_DISINI";
+
+let currentPegawai = null;
+
+async function init() {
+    const appDiv = document.getElementById('app');
+    try {
+        const response = await fetch(API_URL);
+        const allData = await response.json();
+        
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+
+        if (id) {
+            currentPegawai = allData.find(p => p.ID.toString() === id.toString());
+            if (currentPegawai) {
+                renderProfile(currentPegawai);
+                return;
+            }
+        }
+        renderSearch();
+    } catch (err) {
+        appDiv.innerHTML = `<div class="loading">Gagal memuat data. Periksa URL API.</div>`;
+    }
+}
+
+function renderSearch() {
+    document.getElementById('app').innerHTML = `
+        <div class="header">
+            <img src="https://i.ibb.co.com/fYhbdXW0/Madania-Landscape-Putih.png" id="main-logo" class="logo-top">
+            <h2 style="margin-bottom:15px;">Cari Profil Pegawai</h2>
+        </div>
+        <form onsubmit="event.preventDefault(); window.location.search='?id='+document.getElementById('idIn').value;" class="search-container">
+           <input type="number" id="idIn" class="id-input" placeholder="Masukkan ID Pegawai" required>
+           <button type="submit" class="btn-save" style="background:#1e3a8a; color:white;">Lihat Profil</button>
+           <button type="button" class="btn-toggle" onclick="toggleMode()">Ganti Tema</button>
+        </form>
+    `;
+}
+
+function renderProfile(p) {
+    document.title = "Profil - " + p.Nama_Lengkap;
+    document.getElementById('app').innerHTML = `
+        <div class="header">
+            <img src="https://i.ibb.co.com/fYhbdXW0/Madania-Landscape-Putih.png" id="main-logo" class="logo-top">
+            <img src="${p.URL_Foto}" class="profile-photo">
+        </div>
+        <div class="content">
+            <h1>${p.Nama_Lengkap}</h1>
+            <div class="title">${p.Jabatan}<br>${p.Unit_Kerja}</div>
+            <div class="info"><strong>Madania School</strong></div>
+            <div class="info">📱 ${p.No_HP}</div>
+            <div class="info">☎ ${p.Telp_Kantor}</div>
+            <div class="info">✉ ${p.Email}</div>
+            <div class="info">🌐 ${p.Website}</div>
+            <button class="btn-save" onclick="downloadVCF()">Simpan Kontak</button>
+            <button class="btn-wa" onclick="openWA()">Chat WhatsApp</button>
+            <button class="btn-share" onclick="shareCard()">Share Kartu</button>
+            <button class="btn-toggle" onclick="toggleMode()">Ganti Tema</button>
+            <a href="${window.location.pathname}" style="display:block; margin-top:15px; color:inherit; font-size:12px;">Kembali ke Direktori</a>
+            <div class="qr-wrapper"><div id="qrcode"></div></div>
+        </div>
+    `;
+
+    new QRCode(document.getElementById("qrcode"), {
+        text: window.location.href,
+        width: 200,
+        height: 200
+    });
+}
+
+function downloadVCF() {
+  const p = currentPegawai;
+  const vcard = `BEGIN:VCARD
+VERSION:3.0
+FN:${p.Nama_Lengkap}
+ORG:${p.Unit_Kerja}
+TITLE:${p.Jabatan}
+TEL;TYPE=CELL:${p.No_HP}
+TEL;TYPE=WORK:${p.Telp_Kantor}
+EMAIL:${p.Email}
+URL:${p.Website.startsWith('http') ? p.Website : 'https://' + p.Website}
+END:VCARD`;
+
+  const blob = new Blob([vcard], { type: "text/vcard" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${p.Nama_Lengkap}.vcf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function openWA() {
+  let phone = String(currentPegawai.No_HP).replace(/\D/g, '');
+  if (phone.startsWith('0')) phone = '62' + phone.slice(1);
+  window.open("https://wa.me/" + phone, "_blank");
+}
+
+function shareCard() {
+  const shareText = `Profil ${currentPegawai.Nama_Lengkap}\n${currentPegawai.Jabatan}\n\nCek kartu nama digital di sini:`;
+  if (navigator.share) {
+    navigator.share({ title: currentPegawai.Nama_Lengkap, text: shareText, url: window.location.href });
+  } else {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText + "\n" + window.location.href)}`, "_blank");
+  }
+}
+
+function toggleMode() {
+  const isLight = document.body.classList.toggle("light");
+  const logo = document.getElementById("main-logo");
+  logo.src = isLight 
+    ? "https://i.ibb.co.com/B5kJ1P5c/Madania-Landscape-Biru.png" 
+    : "https://i.ibb.co.com/fYhbdXW0/Madania-Landscape-Putih.png";
+}
+
+init();
+</script>
+</body>
+</html>
